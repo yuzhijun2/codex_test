@@ -135,6 +135,11 @@
               </button>
             </div>
           </div>
+
+          <ProductReviews
+            v-if="selectedProduct.productReviews"
+            :reviews="selectedProduct.productReviews"
+          />
         </div>
       </div>
     </Transition>
@@ -147,6 +152,7 @@ import Header from './components/Header.vue'
 import CategoryFilter from './components/CategoryFilter.vue'
 import ProductGrid from './components/ProductGrid.vue'
 import CartSidebar from './components/CartSidebar.vue'
+import ProductReviews from './components/ProductReviews.vue'
 import { useCart } from './composables/useCart.js'
 import { products } from './data/products.js'
 
