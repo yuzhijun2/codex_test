@@ -193,6 +193,28 @@ const banners = [
     action: () => {
       selectedCategory.value = 'audio'
     }
+  },
+  {
+    title: 'Nintendo Switch OLED',
+    subtitle: '掌机/主机二合一 · 独占大作 · 家庭娱乐',
+    tag: 'GAMING',
+    cta: 'EXPLORE',
+    image: 'https://picsum.photos/seed/bannerconsole/640/360',
+    bg: 'linear-gradient(135deg, #0a0f1e 0%, #1a0a2e 50%, #2a0a3e 100%)',
+    action: () => {
+      selectedCategory.value = 'gaming'
+    }
+  },
+  {
+    title: '智能穿戴新境界',
+    subtitle: '健康监测 · 全天续航 · 极致轻便',
+    tag: 'LIFESTYLE',
+    cta: 'DISCOVER',
+    image: 'https://picsum.photos/seed/bannerwear/640/360',
+    bg: 'linear-gradient(135deg, #0a0f1e 0%, #0a1a2e 50%, #0a2a1a 100%)',
+    action: () => {
+      selectedCategory.value = 'wearable'
+    }
   }
 ]
 

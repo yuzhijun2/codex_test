@@ -8,7 +8,7 @@
         @error="handleImageError"
       />
       <div class="card-badge-group">
-        <div class="card-badge" v-if="product.badge" :class="badgeClass">
+      <div class="card-badge" v-if="product.badge" :class="getBadgeClass(product.badge)">
           {{ product.badge }}
         </div>
       </div>
@@ -58,9 +58,17 @@ const badgeClass = {
   '新品': 'badge-new',
   '爆款': 'badge-fire',
   '旗舰': 'badge-flagship',
+  '商务': 'badge-business',
+  '性能': 'badge-performance',
+  '性价比': 'badge-value',
+  '设计': 'badge-design',
   '户外': 'badge-outdoor',
   '音质': 'badge-audio',
   '大屏': 'badge-large'
+}
+
+function getBadgeClass(badge) {
+  return badgeClass[badge] || ''
 }
 
 function formatPrice(price) {
@@ -142,6 +150,10 @@ function handleImageError(e) {
 .badge-new { background: linear-gradient(135deg, #00d4ff, #3b82f6); }
 .badge-fire { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .badge-flagship { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+.badge-business { background: linear-gradient(135deg, #1e40af, #1d4ed8); }
+.badge-performance { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.badge-value { background: linear-gradient(135deg, #059669, #047857); }
+.badge-design { background: linear-gradient(135deg, #d946ef, #c026d3); }
 .badge-outdoor { background: linear-gradient(135deg, #10b981, #059669); }
 .badge-audio { background: linear-gradient(135deg, #ec4899, #db2777); }
 .badge-large { background: linear-gradient(135deg, #6366f1, #4f46e5); }
