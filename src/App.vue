@@ -6,6 +6,7 @@
       :cart-count="cartCount"
       @toggleCart="showCart = !showCart"
       @home="resetHome"
+      @selectProduct="handleViewProduct"
     />
 
     <main class="main-content">

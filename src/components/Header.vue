@@ -26,9 +26,12 @@
           <input
             v-model="localQuery"
             type="text"
-            placeholder="搜索产品..."
+            placeholder="搜索产品名称..."
             class="search-input"
-            @input="$emit('update:modelValue', localQuery)"
+            @input="showSuggestions = true"
+            @focus="localQuery.trim() ? showSuggestions = true : null"
+            @blur="onBlur"
+            @keydown="handleKeydown"
           />
           <button v-if="localQuery" class="search-clear" @click="clearSearch">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
@@ -52,24 +55,80 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { products } from '../data/products.js'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
   cartCount: { type: Number, default: 0 }
 })
 
-const emit = defineEmits(['update:modelValue', 'toggleCart', 'home'])
+const emit = defineEmits(['update:modelValue', 'toggleCart', 'home', 'selectProduct'])
 
 const localQuery = ref(props.modelValue)
+const showSuggestions = ref(false)
+const selectedIndex = ref(-1)
+
+const suggestions = computed(() => {
+  if (!localQuery.value.trim()) return []
+  const q = localQuery.value.trim().toLowerCase()
+  return products
+    .filter(p => p.name.toLowerCase().includes(q))
+    .slice(0, 6)
+})
 
 watch(() => props.modelValue, (val) => {
   localQuery.value = val
+  if (!val) showSuggestions.value = false
 })
+
+watch(localQuery, (val) => {
+  emit('update:modelValue', val)
+  if (val.trim()) {
+    showSuggestions.value = true
+    selectedIndex.value = -1
+  } else {
+    showSuggestions.value = false
+  }
+})
+
+function selectSuggestion(product) {
+  localQuery.value = product.name
+  showSuggestions.value = false
+  emit('update:modelValue', product.name)
+  emit('selectProduct', product)
+}
+
+function handleKeydown(e) {
+  const items = suggestions.value
+  if (!items.length) return
+  if (e.key === 'ArrowDown') {
+    e.preventDefault()
+    selectedIndex.value = (selectedIndex.value + 1) % items.length
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault()
+    selectedIndex.value = selectedIndex.value <= 0 ? items.length - 1 : selectedIndex.value - 1
+  } else if (e.key === 'Enter' && selectedIndex.value >= 0) {
+    e.preventDefault()
+    selectSuggestion(items[selectedIndex.value])
+  }
+}
+
+function highlightMatch(text, query) {
+  if (!query.trim()) return text
+  const idx = text.toLowerCase().indexOf(query.trim().toLowerCase())
+  if (idx === -1) return text
+  return text.slice(0, idx) + '<mark>' + text.slice(idx, idx + query.trim().length) + '</mark>' + text.slice(idx + query.trim().length)
+}
 
 function clearSearch() {
   localQuery.value = ''
+  showSuggestions.value = false
   emit('update:modelValue', '')
+}
+
+function onBlur() {
+  setTimeout(() => { showSuggestions.value = false }, 200)
 }
 </script>
 
@@ -238,6 +297,94 @@ function clearSearch() {
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 212, 255, 0.4);
 }
+
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: rgba(11, 14, 23, 0.95);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 212, 255, 0.04);
+  backdrop-filter: blur(16px);
+  z-index: 200;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.search-suggestions::-webkit-scrollbar { width: 4px; }
+.search-suggestions::-webkit-scrollbar-thumb { background: #1e2a4a; border-radius: 2px; }
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.04);
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover,
+.suggestion-item.highlighted {
+  background: rgba(0, 212, 255, 0.06);
+}
+
+.suggestion-img {
+  width: 44px;
+  height: 33px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #0f1322;
+}
+
+.suggestion-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestion-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e8edf5;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-name :deep(mark) {
+  background: rgba(0, 212, 255, 0.2);
+  color: #00d4ff;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.suggestion-brand {
+  font-size: 11px;
+  color: #4a5278;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.suggestion-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #00d4ff;
+  font-family: 'SF Mono', Consolas, monospace;
+  flex-shrink: 0;
+}
+
+.suggest-enter-active { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.suggest-leave-active { transition: all 0.15s; }
+.suggest-enter-from { opacity: 0; transform: translateY(-6px); }
+.suggest-leave-to { opacity: 0; transform: translateY(-4px); }
 
 @media (max-width: 640px) {
   .header-inner { padding: 0 16px; gap: 12px; }
