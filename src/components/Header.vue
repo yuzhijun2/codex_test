@@ -26,10 +26,10 @@
           <input
             v-model="localQuery"
             type="text"
-            placeholder="搜索产品名称..."
+            placeholder="搜索产品名称、品牌..."
             class="search-input"
             @input="showSuggestions = true"
-            @focus="localQuery.trim() ? showSuggestions = true : null"
+            @focus="showSuggestions = true"
             @blur="onBlur"
             @keydown="handleKeydown"
           />
@@ -73,8 +73,52 @@ const suggestions = computed(() => {
   if (!localQuery.value.trim()) return []
   const q = localQuery.value.trim().toLowerCase()
   return products
-    .filter(p => p.name.toLowerCase().includes(q))
+    .filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q))
     .slice(0, 6)
+})
+
+const totalResults = computed(() => {
+  if (!localQuery.value.trim()) return 0
+  const q = localQuery.value.trim().toLowerCase()
+  return products.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q)).length
+})
+
+const HISTORY_KEY = 'nexus_search_history'
+const searchHistory = ref(loadHistory())
+
+function loadHistory() {
+  try {
+    const data = localStorage.getItem(HISTORY_KEY)
+    return data ? JSON.parse(data) : []
+  } catch { return [] }
+}
+
+function saveHistory() {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(searchHistory.value))
+  } catch {}
+}
+
+function addToHistory(term) {
+  const t = term.trim()
+  if (!t) return
+  searchHistory.value = [t, ...searchHistory.value.filter(h => h !== t)].slice(0, 5)
+  saveHistory()
+}
+
+function clearHistory() {
+  searchHistory.value = []
+  saveHistory()
+}
+
+function selectHistory(term) {
+  localQuery.value = term
+  showSuggestions.value = true
+  emit('update:modelValue', term)
+}
+
+const showHistory = computed(() => {
+  return !localQuery.value.trim() && showSuggestions.value
 })
 
 watch(() => props.modelValue, (val) => {
@@ -87,30 +131,49 @@ watch(localQuery, (val) => {
   if (val.trim()) {
     showSuggestions.value = true
     selectedIndex.value = -1
-  } else {
-    showSuggestions.value = false
   }
 })
 
 function selectSuggestion(product) {
+  addToHistory(product.name)
   localQuery.value = product.name
   showSuggestions.value = false
   emit('update:modelValue', product.name)
   emit('selectProduct', product)
 }
 
+function showAllResults() {
+  showSuggestions.value = false
+  emit('update:modelValue', localQuery.value)
+}
+
 function handleKeydown(e) {
+  if (e.key === 'Escape') {
+    showSuggestions.value = false
+    return
+  }
   const items = suggestions.value
-  if (!items.length) return
+  if (!items.length) {
+    if (e.key === 'Enter' && localQuery.value.trim()) {
+      addToHistory(localQuery.value)
+    }
+    return
+  }
   if (e.key === 'ArrowDown') {
     e.preventDefault()
     selectedIndex.value = (selectedIndex.value + 1) % items.length
   } else if (e.key === 'ArrowUp') {
     e.preventDefault()
     selectedIndex.value = selectedIndex.value <= 0 ? items.length - 1 : selectedIndex.value - 1
-  } else if (e.key === 'Enter' && selectedIndex.value >= 0) {
+  } else if (e.key === 'Enter') {
     e.preventDefault()
-    selectSuggestion(items[selectedIndex.value])
+    if (selectedIndex.value >= 0) {
+      selectSuggestion(items[selectedIndex.value])
+    } else {
+      addToHistory(localQuery.value)
+      showSuggestions.value = false
+      emit('update:modelValue', localQuery.value)
+    }
   }
 }
 
@@ -381,9 +444,101 @@ function onBlur() {
   flex-shrink: 0;
 }
 
-.suggest-enter-active { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.suggest-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.04);
+}
+
+.suggest-count {
+  font-size: 12px;
+  color: #4a5278;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+
+.suggest-count strong {
+  color: #8892b0;
+}
+
+.clear-history-btn {
+  background: none;
+  border: none;
+  font-size: 11px;
+  color: #4a5278;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.clear-history-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.suggest-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid rgba(0, 212, 255, 0.04);
+  cursor: pointer;
+  color: #8892b0;
+  font-size: 13px;
+  transition: all 0.15s;
+}
+
+.suggest-footer:hover {
+  background: rgba(0, 212, 255, 0.06);
+  color: #00d4ff;
+}
+
+.suggest-footer strong {
+  color: #00d4ff;
+}
+
+.search-history {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: rgba(11, 14, 23, 0.95);
+  border: 1px solid rgba(0, 212, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 212, 255, 0.04);
+  backdrop-filter: blur(16px);
+  z-index: 200;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-size: 13px;
+  color: #8892b0;
+  border-bottom: 1px solid rgba(0, 212, 255, 0.04);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item:hover {
+  background: rgba(0, 212, 255, 0.06);
+  color: #e8edf5;
+}
+
+.suggest-enter-active { transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
 .suggest-leave-active { transition: all 0.15s; }
-.suggest-enter-from { opacity: 0; transform: translateY(-6px); }
+.suggest-enter-from { opacity: 0; transform: translateY(-8px); }
 .suggest-leave-to { opacity: 0; transform: translateY(-4px); }
 
 @media (max-width: 640px) {
