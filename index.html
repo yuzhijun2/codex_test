@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ElectroShop - 电子数码商城</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: #f5f5f7; color: #111827; -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+    button { font-family: inherit; cursor: pointer; }
+    img { user-select: none; -webkit-user-drag: none; }
+
+    .app { min-height: 100vh; }
+    .main-content { padding-top: 68px; }
+
+    /* Header */
+    .header {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .header-inner {
+      max-width: 1280px; margin: 0 auto; padding: 0 24px;
+      height: 68px; display: flex; align-items: center; gap: 24px;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; cursor: pointer; flex-shrink: 0; }
+    .logo-icon svg { display: block; }
+    .logo-text { font-size: 20px; font-weight: 700; color: #111827; }
+    .logo-accent { color: #2563eb; }
+    .search-area { flex: 1; max-width: 520px; margin: 0 auto; }
+    .search-wrapper { position: relative; display: flex; align-items: center; }
+    .search-icon { position: absolute; left: 14px; color: #9ca3af; pointer-events: none; display: flex; }
+    .search-input {
+      width: 100%; height: 42px; padding: 0 40px 0 42px;
+      border: 1.5px solid #e5e7eb; border-radius: 21px; font-size: 14px;
+      color: #111827; background: #f3f4f6; transition: all 0.2s; outline: none;
+    }
+    .search-input:focus { background: #fff; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .search-input::placeholder { color: #9ca3af; }
+    .search-clear {
+      position: absolute; right: 8px; width: 28px; height: 28px;
+      border: none; background: transparent; cursor: pointer; color: #9ca3af;
+      display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .search-clear:hover { background: #e5e7eb; color: #6b7280; }
+    .header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .cart-btn {
+      position: relative; width: 42px; height: 42px; border: 1.5px solid #e5e7eb;
+      background: #fff; border-radius: 50%; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; color: #374151; transition: all 0.2s;
+    }
+    .cart-btn:hover { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+    .cart-badge {
+      position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
+      padding: 0 4px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 700;
+      border-radius: 9px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 4px rgba(239,68,68,0.3);
+    }
+
+    /* Banner */
+    .banner-section { padding: 20px 24px 0; max-width: 1280px; margin: 0 auto; }
+    .banner-slider {
+      position: relative; border-radius: 16px; overflow: hidden;
+      aspect-ratio: 2.8 / 1; max-height: 360px;
+    }
+    .banner-track { display: flex; height: 100%; transition: transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94); }
+    .banner-slide {
+      flex: 0 0 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; position: relative; overflow: hidden; cursor: pointer;
+    }
+    .banner-content { position: relative; z-index: 2; max-width: 50%; }
+    .banner-tag {
+      display: inline-block; padding: 4px 14px; background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px; font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 12px;
+    }
+    .banner-title { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 8px; line-height: 1.2; }
+    .banner-subtitle { font-size: 14px; color: rgba(255,255,255,0.75); margin-bottom: 20px; line-height: 1.5; }
+    .banner-cta {
+      padding: 10px 28px; background: #fff; color: #111827; border: none;
+      border-radius: 24px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+    }
+    .banner-cta:hover { background: #f0f0f0; transform: translateY(-1px); }
+    .banner-img {
+      height: 85%; aspect-ratio: 16/9; object-fit: cover; border-radius: 12px;
+      position: relative; z-index: 2; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .banner-dots {
+      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; z-index: 3;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.6);
+      background: transparent; cursor: pointer; transition: all 0.2s; padding: 0;
+    }
+    .dot.active { background: #fff; border-color: #fff; width: 24px; border-radius: 4px; }
+
+    /* Content Section */
+    .content-section { max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* Category Filter */
+    .category-filter { display: flex; gap: 8px; padding: 0 0 4px; overflow-x: auto; scrollbar-width: none; }
+    .category-filter::-webkit-scrollbar { display: none; }
+    .cat-btn {
+      display: flex; align-items: center; gap: 6px; padding: 8px 18px;
+      border: 1.5px solid #e5e7eb; background: #fff; border-radius: 20px;
+      cursor: pointer; font-size: 13px; color: #6b7280; white-space: nowrap;
+      transition: all 0.2s; flex-shrink: 0;
+    }
+    .cat-btn:hover { border-color: #93c5fd; color: #2563eb; background: #eff6ff; }
+    .cat-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .cat-icon { font-size: 15px; }
+    .cat-name { font-weight: 500; }
+
+    /* Results Bar */
+    .results-bar {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+    }
+    .results-count { font-size: 13px; color: #6b7280; }
+    .results-count strong { color: #111827; }
+    .sort-group {
+      display: flex; gap: 4px; background: #f3f4f6; padding: 3px; border-radius: 8px;
+    }
+    .sort-btn {
+      padding: 5px 14px; border: none; background: transparent; border-radius: 6px;
+      font-size: 12px; font-weight: 500; color: #6b7280; cursor: pointer; transition: all 0.15s;
+    }
+    .sort-btn:hover { color: #374151; }
+    .sort-btn.active { background: #fff; color: #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+    /* Product Grid */
+    .product-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;
+    }
+
+    /* Product Card */
+    .product-card {
+      background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #f0f0f0;
+      cursor: pointer; transition: all 0.25s; display: flex; flex-direction: column;
+    }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.1); border-color: #e5e7eb; }
+    .card-image {
+      position: relative; aspect-ratio: 4/3; background: #f9fafb; overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+    .product-card:hover .card-image img { transform: scale(1.05); }
+    .card-badge {
+      position: absolute; top: 10px; left: 10px; padding: 3px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600; color: #fff;
+    }
+    .badge-hot { background: #ef4444; }
+    .badge-new { background: #2563eb; }
+    .badge-fire { background: #f59e0b; }
+    .badge-flagship { background: #8b5cf6; }
+    .badge-outdoor { background: #10b981; }
+    .badge-audio { background: #ec4899; }
+    .badge-large { background: #6366f1; }
+    .card-colors { position: absolute; bottom: 8px; right: 10px; display: flex; gap: 4px; }
+    .color-dot {
+      width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .card-body { padding: 14px 16px 16px; flex: 1; display: flex; flex-direction: column; }
+    .card-brand {
+      font-size: 11px; font-weight: 600; color: #2563eb; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 2px;
+    }
+    .card-title {
+      font-size: 15px; font-weight: 600; color: #111827; margin: 0 0 6px; line-height: 1.3;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .card-desc {
+      font-size: 12px; color: #6b7280; line-height: 1.5; margin: 0 0 8px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .card-rating { display: flex; align-items: center; gap: 4px; margin-bottom: 10px; }
+    .stars { display: flex; gap: 1px; }
+    .star-filled { color: #f59e0b; }
+    .star-empty { color: #d1d5db; }
+    .rating-num { font-size: 12px; font-weight: 600; color: #f59e0b; }
+    .review-count { font-size: 11px; color: #9ca3af; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .price-area { display: flex; align-items: baseline; gap: 6px; }
+    .current-price { font-size: 18px; font-weight: 700; color: #ef4444; }
+    .original-price { font-size: 12px; color: #9ca3af; text-decoration: line-through; }
+    .add-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid #2563eb;
+      background: #fff; color: #2563eb; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0;
+    }
+    .add-btn:hover { background: #2563eb; color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+
+    /* Empty State */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 80px 20px; color: #9ca3af;
+    }
+    .empty-state p { font-size: 16px; font-weight: 500; color: #6b7280; margin: 12px 0 4px; }
+    .empty-state span { font-size: 13px; }
+
+    /* Cart Sidebar */
+    .cart-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200;
+      display: flex; justify-content: flex-end; backdrop-filter: blur(2px);
+    }
+    .cart-panel {
+      width: 400px; max-width: 100vw; height: 100vh; background: #fff;
+      display: flex; flex-direction: column; box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+    }
+    .cart-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px; border-bottom: 1px solid #f0f0f0;
+    }
+    .cart-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; color: #111827; }
+    .cart-count-badge {
+      font-size: 13px; font-weight: 500; color: #6b7280; background: #f3f4f6;
+      padding: 1px 8px; border-radius: 10px;
+    }
+    .close-btn {
+      width: 32px; height: 32px; border: none; background: transparent; cursor: pointer;
+      color: #6b7280; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+    .close-btn:hover { background: #f3f4f6; color: #111827; }
+    .cart-items { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .cart-item {
+      display: flex; gap: 12px; padding: 12px; background: #f9fafb; border-radius: 10px; align-items: center;
+    }
+    .item-img {
+      width: 64px; height: 48px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: #e5e7eb;
+    }
+    .item-info { flex: 1; min-width: 0; }
+    .item-brand { font-size: 10px; font-weight: 600; color: #2563eb; text-transform: uppercase; letter-spacing: 0.3px; }
+    .item-name {
+      font-size: 13px; font-weight: 500; color: #111827; margin: 1px 0 4px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .item-price { font-size: 14px; font-weight: 700; color: #ef4444; }
+    .item-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+    .qty-control { display: flex; align-items: center; gap: 0; border: 1px solid #e5e7eb; border-radius: 6px; overflow: hidden; }
+    .qty-btn {
+      width: 28px; height: 28px; border: none; background: #fff; cursor: pointer;
+      color: #6b7280; display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+    }
+    .qty-btn:hover { background: #f3f4f6; color: #111827; }
+    .qty-value {
+      width: 32px; text-align: center; font-size: 13px; font-weight: 600; color: #111827;
+      background: #fff; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;
+    }
+    .remove-btn {
+      width: 24px; height: 24px; border: none; background: transparent; cursor: pointer;
+      color: #9ca3af; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+    .remove-btn:hover { background: #fee2e2; color: #ef4444; }
+    .cart-empty {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 8px; color: #9ca3af; padding: 40px;
+    }
+    .cart-empty p { font-size: 15px; font-weight: 500; color: #6b7280; margin: 0; }
+    .cart-empty span { font-size: 13px; }
+    .cart-footer { padding: 20px 24px; border-top: 1px solid #f0f0f0; background: #fafafa; }
+    .summary-row { display: flex; justify-content: space-between; font-size: 13px; color: #6b7280; margin-bottom: 8px; }
+    .summary-row.total { font-size: 16px; font-weight: 700; color: #111827; margin-bottom: 16px; }
+    .summary-row .free { color: #10b981; font-weight: 500; }
+    .summary-divider { height: 1px; background: #e5e7eb; margin: 8px 0 12px; }
+    .checkout-btn {
+      width: 100%; height: 48px; background: #2563eb; color: #fff; border: none;
+      border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s;
+    }
+    .checkout-btn:hover { background: #1d4ed8; box-shadow: 0 4px 16px rgba(37,99,235,0.3); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300;
+      display: flex; align-items: center; justify-content: center; padding: 24px; backdrop-filter: blur(4px);
+    }
+    .modal-panel {
+      background: #fff; border-radius: 16px; max-width: 800px; width: 100%;
+      max-height: 90vh; overflow-y: auto; position: relative; padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-close {
+      position: absolute; top: 16px; right: 16px; width: 36px; height: 36px;
+      border: none; background: #f3f4f6; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; color: #6b7280;
+      transition: all 0.15s; z-index: 10;
+    }
+    .modal-close:hover { background: #e5e7eb; color: #111827; }
+    .modal-layout { display: flex; gap: 32px; }
+    .modal-image { flex: 1; min-width: 0; }
+    .modal-image img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 12px; background: #f3f4f6; }
+    .modal-colors { display: flex; gap: 8px; margin-top: 12px; justify-content: center; }
+    .color-dot-lg {
+      width: 28px; height: 28px; border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.15); cursor: pointer; transition: transform 0.15s;
+    }
+    .color-dot-lg:hover { transform: scale(1.2); }
+    .modal-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+    .modal-brand {
+      font-size: 12px; font-weight: 600; color: #2563eb; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .modal-title { font-size: 22px; font-weight: 700; color: #111827; line-height: 1.3; }
+    .modal-rating { display: flex; align-items: center; gap: 6px; }
+    .rating-score { font-size: 14px; font-weight: 700; color: #f59e0b; }
+    .rating-reviews { font-size: 13px; color: #9ca3af; }
+    .modal-desc { font-size: 14px; color: #6b7280; line-height: 1.7; }
+    .section-label { font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 6px; }
+    .storage-options { display: flex; gap: 8px; flex-wrap: wrap; }
+    .storage-btn {
+      padding: 6px 16px; border: 1.5px solid #e5e7eb; background: #fff;
+      border-radius: 8px; font-size: 13px; font-weight: 500; color: #374151;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .storage-btn:hover { border-color: #93c5fd; color: #2563eb; }
+    .storage-btn.active { background: #2563eb; border-color: #2563eb; color: #fff; }
+    .modal-price-area { margin-top: auto; padding-top: 12px; }
+    .modal-price { font-size: 32px; font-weight: 800; color: #ef4444; }
+    .modal-original { font-size: 13px; color: #9ca3af; text-decoration: line-through; margin-top: 2px; }
+    .modal-add-btn {
+      width: 100%; height: 48px; background: #2563eb; color: #fff; border: none;
+      border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; margin-top: 16px;
+    }
+    .modal-add-btn:hover { background: #1d4ed8; box-shadow: 0 4px 16px rgba(37,99,235,0.3); }
+
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.25s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+    .slide-enter-active, .slide-leave-active { transition: all 0.3s ease; }
+    .slide-enter-from, .slide-leave-to { opacity: 0; }
+    .slide-enter-from .cart-panel, .slide-leave-to .cart-panel { transform: translateX(100%); }
+
+    @media (max-width: 768px) {
+      .banner-section { padding: 12px 16px 0; }
+      .banner-slide { padding: 0 24px; flex-direction: column; justify-content: center; gap: 16px; }
+      .banner-content { max-width: 100%; text-align: center; }
+      .banner-title { font-size: 22px; }
+      .banner-subtitle { font-size: 12px; }
+      .banner-img { height: auto; width: 70%; }
+      .content-section { padding: 12px 16px; }
+      .modal-panel { padding: 24px; }
+      .modal-layout { flex-direction: column; }
+      .modal-price { font-size: 26px; }
+      .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+    }
+    @media (max-width: 640px) {
+      .header-inner { padding: 0 16px; gap: 12px; }
+      .logo-text { font-size: 17px; }
+      .search-area { max-width: none; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="logo" @click="resetAll">
+          <div class="logo-icon">
+            <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+              <rect width="64" height="64" rx="14" fill="#2563eb"/>
+              <path d="M20 44V28L32 18L44 28V44H36V34H28V44H20Z" fill="white"/>
+            </svg>
+          </div>
+          <span class="logo-text">Electro<span class="logo-accent">Shop</span></span>
+        </div>
+        <div class="search-area">
+          <div class="search-wrapper">
+            <span class="search-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/>
+              </svg>
+            </span>
+            <input class="search-input" type="text" v-model="searchQuery" placeholder="搜索电子产品..." />
+            <button class="search-clear" v-if="searchQuery" @click="searchQuery = ''">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M6 6L18 18M6 18L18 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="cart-btn" @click="showCart = true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+            </svg>
+            <span class="cart-badge" v-if="cartCount > 0">{{ cartCount > 99 ? '99+' : cartCount }}</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Banner -->
+      <div class="banner-section">
+        <div class="banner-slider">
+          <div class="banner-track" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
+            <div v-for="(b, i) in banners" :key="i" class="banner-slide" :style="{ background: b.bg }" @click="b.action()">
+              <div class="banner-content">
+                <span class="banner-tag">{{ b.tag }}</span>
+                <h2 class="banner-title">{{ b.title }}</h2>
+                <p class="banner-subtitle">{{ b.subtitle }}</p>
+                <button class="banner-cta">{{ b.cta }}</button>
+              </div>
+              <img class="banner-img" :src="b.image" :alt="b.title" />
+            </div>
+          </div>
+          <div class="banner-dots">
+            <button v-for="(_, i) in banners" :key="i" class="dot" :class="{ active: currentBanner === i }" @click="currentBanner = i" />
+          </div>
+        </div>
+      </div>
+
+      <div class="content-section">
+        <!-- Category Filter -->
+        <div class="category-filter">
+          <button v-for="cat in categories" :key="cat.id" class="cat-btn" :class="{ active: selectedCategory === cat.id }" @click="selectedCategory = cat.id">
+            <span class="cat-icon">{{ cat.icon }}</span>
+            <span class="cat-name">{{ cat.name }}</span>
+          </button>
+        </div>
+
+        <!-- Results Bar -->
+        <div class="results-bar">
+          <span class="results-count">共 <strong>{{ filteredProducts.length }}</strong> 件商品</span>
+          <div class="sort-group">
+            <button v-for="opt in sortOptions" :key="opt.value" class="sort-btn" :class="{ active: sortBy === opt.value }" @click="sortBy = opt.value">{{ opt.label }}</button>
+          </div>
+        </div>
+
+        <!-- Product Grid -->
+        <div class="product-grid">
+          <div v-for="p in filteredProducts" :key="p.id" class="product-card" @click="openDetail(p)">
+            <div class="card-image">
+              <img :src="p.image" :alt="p.name" loading="lazy" @error="e => e.target.src = 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 300%22><rect fill=%22%23f3f4f6%22 width=%22400%22 height=%22300%22/><text x=%22200%22 y=%22155%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2216%22 font-family=%22sans-serif%22>加载失败</text></svg>'" />
+              <div class="card-badge" :class="'badge-' + badgeClass(p.badge)" v-if="p.badge">{{ p.badge }}</div>
+              <div class="card-colors" v-if="p.colors && p.colors.length > 1">
+                <span v-for="(c, j) in p.colors.slice(0,4)" :key="j" class="color-dot" :style="{ background: c }" />
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="card-brand">{{ p.brand }}</div>
+              <h3 class="card-title">{{ p.name }}</h3>
+              <p class="card-desc">{{ p.description }}</p>
+              <div class="card-rating">
+                <div class="stars">
+                  <svg v-for="s in 5" :key="s" width="14" height="14" viewBox="0 0 24 24" :fill="s <= Math.round(p.rating) ? '#f59e0b' : '#d1d5db'" stroke="#f59e0b" stroke-width="1">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </div>
+                <span class="rating-num">{{ p.rating }}</span>
+                <span class="review-count">({{ formatNum(p.reviews) }})</span>
+              </div>
+              <div class="card-footer">
+                <div class="price-area">
+                  <span class="current-price">¥{{ fmtPrice(p.price) }}</span>
+                  <span class="original-price" v-if="p.originalPrice">¥{{ fmtPrice(p.originalPrice) }}</span>
+                </div>
+                <button class="add-btn" @click.stop="addToCart(p); showCart = true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" v-if="filteredProducts.length === 0">
+          <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1" stroke-linecap="round">
+            <circle cx="11" cy="11" r="7"/><path d="M16.5 16.5L21 21"/>
+          </svg>
+          <p>没有找到匹配的商品</p>
+          <span>试试调整筛选条件或搜索关键词</span>
+        </div>
+      </div>
+    </main>
+
+    <!-- Cart Sidebar -->
+    <Teleport to="body">
+      <Transition name="slide">
+        <div v-if="showCart" class="cart-overlay" @click.self="showCart = false">
+          <aside class="cart-panel" @click.stop>
+            <div class="cart-header">
+              <div class="cart-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                  <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+                </svg>
+                <span>购物车</span>
+                <span class="cart-count-badge">{{ cartItems.length }}件</span>
+              </div>
+              <button class="close-btn" @click="showCart = false">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                  <path d="M6 6L18 18M6 18L18 6"/>
+                </svg>
+              </button>
+            </div>
+            <div class="cart-items" v-if="cartItems.length > 0">
+              <div v-for="item in cartItems" :key="item.id" class="cart-item">
+                <img :src="item.image" :alt="item.name" class="item-img" />
+                <div class="item-info">
+                  <div class="item-brand">{{ item.brand }}</div>
+                  <div class="item-name">{{ item.name }}</div>
+                  <div class="item-price">¥{{ fmtPrice(item.price) }}</div>
+                </div>
+                <div class="item-actions">
+                  <div class="qty-control">
+                    <button class="qty-btn" @click="updateQty(item.id, item.quantity - 1)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 12h14"/></svg>
+                    </button>
+                    <span class="qty-value">{{ item.quantity }}</span>
+                    <button class="qty-btn" @click="updateQty(item.id, item.quantity + 1)">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+                  </div>
+                  <button class="remove-btn" @click="removeItem(item.id)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                      <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="cart-empty" v-else>
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+              </svg>
+              <p>购物车还是空的</p>
+              <span>快去挑选心仪的电子产品吧</span>
+            </div>
+            <div class="cart-footer" v-if="cartItems.length > 0">
+              <div class="summary-row">
+                <span>商品小计</span>
+                <span>¥{{ fmtPrice(cartSubtotal) }}</span>
+              </div>
+              <div class="summary-row">
+                <span>运费</span>
+                <span :class="shipping === 0 ? 'free' : ''">{{ shipping === 0 ? '免运费' : '¥' + fmtPrice(shipping) }}</span>
+              </div>
+              <div class="summary-row">
+                <span>税费 (13%)</span>
+                <span>¥{{ fmtPrice(cartTax) }}</span>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-row total">
+                <span>合计</span>
+                <span>¥{{ fmtPrice(cartTotal) }}</span>
+              </div>
+              <button class="checkout-btn" @click="checkout">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                去结算
+              </button>
+            </div>
+          </aside>
+        </div>
+      </Transition>
+    </Teleport>
+
+    <!-- Product Detail Modal -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div v-if="detail" class="modal-overlay" @click.self="detail = null">
+          <div class="modal-panel">
+            <button class="modal-close" @click="detail = null">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <path d="M6 6L18 18M6 18L18 6"/>
+              </svg>
+            </button>
+            <div class="modal-layout" v-if="detail">
+              <div class="modal-image">
+                <img :src="detail.image" :alt="detail.name" />
+                <div class="modal-colors" v-if="detail.colors">
+                  <span v-for="(c, i) in detail.colors" :key="i" class="color-dot-lg"
+                    :style="{ background: c, border: c === '#ffffff' ? '1px solid #e5e7eb' : 'none' }" />
+                </div>
+              </div>
+              <div class="modal-info">
+                <span class="modal-brand">{{ detail.brand }}</span>
+                <h2 class="modal-title">{{ detail.name }}</h2>
+                <div class="modal-rating">
+                  <div class="stars">
+                    <svg v-for="s in 5" :key="s" width="16" height="16" viewBox="0 0 24 24" :fill="s <= Math.round(detail.rating) ? '#f59e0b' : '#d1d5db'" stroke="#f59e0b" stroke-width="1">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                    </svg>
+                  </div>
+                  <span class="rating-score">{{ detail.rating }}</span>
+                  <span class="rating-reviews">{{ detail.reviews }} 条评价</span>
+                </div>
+                <p class="modal-desc">{{ detail.description }}</p>
+                <div class="modal-storage" v-if="detail.storage">
+                  <div class="section-label">存储容量</div>
+                  <div class="storage-options">
+                    <button v-for="s in detail.storage" :key="s" class="storage-btn" :class="{ active: selectedStorage === s }" @click="selectedStorage = s">{{ s }}</button>
+                  </div>
+                </div>
+                <div class="modal-price-area">
+                  <div class="modal-price">¥{{ fmtPrice(detail.price) }}</div>
+                  <div class="modal-original" v-if="detail.originalPrice">原价 ¥{{ fmtPrice(detail.originalPrice) }}</div>
+                </div>
+                <button class="modal-add-btn" @click="addToCart(detail); detail = null; showCart = true">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                  加入购物车
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, watch, onMounted, onUnmounted } = Vue;
+
+const products = [
+  { id:1, name:'iPhone 15 Pro Max', brand:'Apple', category:'smartphone', price:9999, originalPrice:10999, rating:4.8, reviews:2846, description:'A17 Pro 芯片 · 钛金属设计 · 4800万像素专业级相机系统 · 支持USB-C · 支持卫星SOS紧急联络', image:'https://picsum.photos/seed/iphone15pro/400/300', badge:'热卖', colors:['#4a4a4a','#c0c0c0','#f5f5f5','#1a2a3a'], storage:['256GB','512GB','1TB'] },
+  { id:2, name:'MacBook Air 15" M3', brand:'Apple', category:'laptop', price:10999, originalPrice:12499, rating:4.9, reviews:1852, description:'M3 芯片 · 15.3英寸Liquid Retina显示屏 · 18小时续航 · 8核CPU · 10核GPU · 轻薄仅1.51kg', image:'https://picsum.photos/seed/macbookair/400/300', badge:'新品', colors:['#c0c0c0','#3d3d3d','#f5e6d0'], storage:['256GB','512GB','1TB','2TB'] },
+  { id:3, name:'Sony WH-1000XM5', brand:'Sony', category:'audio', price:2399, originalPrice:2999, rating:4.7, reviews:3621, description:'行业领先降噪 · 30小时续航 · 自适应声音控制 · 高解析度音频 · 舒适头梁设计 · 快充3分钟播放3小时', image:'https://picsum.photos/seed/sonyxm5/400/300', badge:'爆款', colors:['#2d2d2d','#e8e8e8'] },
+  { id:4, name:'iPad Air M2', brand:'Apple', category:'tablet', price:4799, originalPrice:5499, rating:4.8, reviews:1456, description:'M2 芯片 · 11英寸Liquid Retina显示屏 · 支持Apple Pencil Pro · 轻薄便携 · 全天续航', image:'https://picsum.photos/seed/ipadair/400/300', badge:'热卖', colors:['#c0c0c0','#3d5a80','#5c4a3d','#7a5c4a'], storage:['128GB','256GB','512GB','1TB'] },
+  { id:5, name:'Samsung Galaxy S24 Ultra', brand:'Samsung', category:'smartphone', price:8999, originalPrice:9699, rating:4.7, reviews:2154, description:'骁龙8 Gen 3 · Galaxy AI智能助手 · 2亿像素相机 · S Pen内置 · 钛金属框架 · 5000mAh电池', image:'https://picsum.photos/seed/galaxys24/400/300', badge:'新品', colors:['#2d2d2d','#f5e6cc','#c4a882','#6b7b8d'], storage:['256GB','512GB','1TB'] },
+  { id:6, name:'Dell XPS 16', brand:'Dell', category:'laptop', price:15999, originalPrice:17999, rating:4.6, reviews:984, description:'Intel Core Ultra 9 · RTX 4070 · 16.3英寸4K OLED · 64GB内存 · 铝合金机身 · 指纹识别', image:'https://picsum.photos/seed/dellxps16/400/300', badge:'旗舰', colors:['#c0c0c0','#1a1a2e'], storage:['512GB','1TB','2TB'] },
+  { id:7, name:'AirPods Pro 2', brand:'Apple', category:'audio', price:1899, originalPrice:1999, rating:4.8, reviews:5213, description:'H2芯片 · 自适应降噪 · 个性化空间音频 · 触控调节音量 · USB-C充电盒 · 6小时续航', image:'https://picsum.photos/seed/airpodspro/400/300', badge:'爆款', colors:['#ffffff'] },
+  { id:8, name:'Google Pixel 8 Pro', brand:'Google', category:'smartphone', price:6999, originalPrice:7999, rating:4.5, reviews:1328, description:'Tensor G3芯片 · 5000万像素专业相机 · AI魔术橡皮擦 · 6.7英寸120Hz LTPO屏幕 · 7年系统更新', image:'https://picsum.photos/seed/pixel8pro/400/300', colors:['#3d3d3d','#e8e0d0','#7a9bb5'], storage:['128GB','256GB','512GB'] },
+  { id:9, name:'Galaxy Tab S9 Ultra', brand:'Samsung', category:'tablet', price:7999, originalPrice:8999, rating:4.6, reviews:786, description:'14.6英寸Dynamic AMOLED 2X · 骁龙8 Gen 2 · IP68防水 · S Pen · 11200mAh电池 · DeX模式', image:'https://picsum.photos/seed/tabs9ultra/400/300', badge:'大屏', colors:['#1a1a2e','#c0c0c0'], storage:['256GB','512GB','1TB'] },
+  { id:10, name:'Apple Watch Ultra 2', brand:'Apple', category:'wearable', price:5999, originalPrice:6299, rating:4.7, reviews:1245, description:'S9芯片 · 49mm钛金属表壳 · 2000尼特亮度 · 精准双频GPS · 86小时续航 · 水深温度感应', image:'https://picsum.photos/seed/awu2/400/300', badge:'户外', colors:['#c0c0c0','#2d3a3a'] },
+  { id:11, name:'Bose QuietComfort Ultra', brand:'Bose', category:'audio', price:2999, originalPrice:3299, rating:4.7, reviews:1836, description:'沉浸空间音频 · CustomTune智能调校 · 标志性降噪 · 24小时续航 · 骁龙畅听 · 折叠便携', image:'https://picsum.photos/seed/boseqc/400/300', badge:'音质', colors:['#2d2d2d','#e0ddd5','#5c3a2d'] },
+  { id:12, name:'Samsung Galaxy Watch 6 Classic', brand:'Samsung', category:'wearable', price:3299, originalPrice:3699, rating:4.5, reviews:956, description:'47mm · 旋转表圈 · 蓝宝石玻璃 · 身体成分测量 · 心电图 · 睡眠分析 · Wear OS · 全天续航', image:'https://picsum.photos/seed/gwatch6/400/300', colors:['#2d2d2d','#c0c0c0'] }
+];
+
+const categories = [
+  { id:'all', name:'全部', icon:'📱' }, { id:'smartphone', name:'智能手机', icon:'📱' },
+  { id:'laptop', name:'笔记本电脑', icon:'💻' }, { id:'tablet', name:'平板电脑', icon:'📲' },
+  { id:'audio', name:'音频设备', icon:'🎧' }, { id:'wearable', name:'智能穿戴', icon:'⌚' }
+];
+
+function fmtPrice(v) { return (v / 100).toFixed(v % 100 === 0 ? 0 : 2); }
+function formatNum(n) {
+  if (n >= 10000) return (n/10000).toFixed(1) + '万';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'k';
+  return n.toString();
+}
+const badgeClassMap = { '热卖':'hot', '新品':'new', '爆款':'fire', '旗舰':'flagship', '户外':'outdoor', '音质':'audio', '大屏':'large' };
+
+createApp({
+  setup() {
+    const searchQuery = ref('');
+    const selectedCategory = ref('all');
+    const sortBy = ref('default');
+    const showCart = ref(false);
+    const detail = ref(null);
+    const selectedStorage = ref('');
+    const currentBanner = ref(0);
+    let bannerTimer = null;
+
+    const sortOptions = [
+      { label:'默认', value:'default' }, { label:'价格↑', value:'price-asc' },
+      { label:'价格↓', value:'price-desc' }, { label:'评分', value:'rating' }
+    ];
+
+    const banners = [
+      { title:'新品首发 · iPhone 15 Pro', subtitle:'钛金属设计 · A17 Pro 芯片 · 4800万像素系统', tag:'限时优惠', cta:'立即购买', image:'https://picsum.photos/seed/bannerphone/640/360', bg:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)', action:() => selectedCategory.value = 'smartphone' },
+      { title:'MacBook Air M3 超强性能', subtitle:'轻薄设计 · 18小时续航 · 强大AI性能', tag:'教育优惠', cta:'了解详情', image:'https://picsum.photos/seed/bannermac/640/360', bg:'linear-gradient(135deg, #1c1917 0%, #292524 50%, #44403c 100%)', action:() => selectedCategory.value = 'laptop' },
+      { title:'Sony WH-1000XM5 降噪旗舰', subtitle:'行业领先降噪 · 30小时续航 · 极致舒适', tag:'爆款推荐', cta:'查看详情', image:'https://picsum.photos/seed/bannerheadphones/640/360', bg:'linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%)', action:() => selectedCategory.value = 'audio' }
+    ];
+
+    const cartItems = ref([]);
+    const cartCount = computed(() => cartItems.value.reduce((s,i) => s + i.quantity, 0));
+    const cartSubtotal = computed(() => cartItems.value.reduce((s,i) => s + i.price * i.quantity, 0));
+    const shipping = computed(() => cartSubtotal.value >= 500 ? 0 : 30);
+    const cartTax = computed(() => Math.round(cartSubtotal.value * 0.13));
+    const cartTotal = computed(() => cartSubtotal.value + shipping.value + cartTax.value);
+
+    function addToCart(product) {
+      const existing = cartItems.value.find(i => i.id === product.id);
+      if (existing) { existing.quantity++; }
+      else { cartItems.value.push({ id:product.id, name:product.name, brand:product.brand, price:product.price, image:product.image, quantity:1 }); }
+    }
+    function removeItem(id) { cartItems.value = cartItems.value.filter(i => i.id !== id); }
+    function updateQty(id, q) {
+      if (q <= 0) { removeItem(id); return; }
+      const item = cartItems.value.find(i => i.id === id);
+      if (item) item.quantity = q;
+    }
+    function checkout() { alert('🎉 订单已提交！感谢您在 ElectroShop 购物。'); showCart.value = false; }
+
+    const filteredProducts = computed(() => {
+      let r = [...products];
+      if (selectedCategory.value !== 'all') r = r.filter(p => p.category === selectedCategory.value);
+      if (searchQuery.value.trim()) {
+        const q = searchQuery.value.trim().toLowerCase();
+        r = r.filter(p => p.name.toLowerCase().includes(q) || p.brand.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+      }
+      switch (sortBy.value) {
+        case 'price-asc': r.sort((a,b) => a.price - b.price); break;
+        case 'price-desc': r.sort((a,b) => b.price - a.price); break;
+        case 'rating': r.sort((a,b) => b.rating - a.rating); break;
+      }
+      return r;
+    });
+
+    function openDetail(product) { detail.value = product; selectedStorage.value = product.storage ? product.storage[0] : ''; }
+    function badgeClass(name) { return badgeClassMap[name] || 'hot'; }
+    function resetAll() { selectedCategory.value = 'all'; searchQuery.value = ''; sortBy.value = 'default'; currentBanner.value = 0; }
+
+    function startBanner() {
+      bannerTimer = setInterval(() => { currentBanner.value = (currentBanner.value + 1) % 3; }, 5000);
+    }
+    onMounted(startBanner);
+    onUnmounted(() => { if (bannerTimer) clearInterval(bannerTimer); });
+
+    watch(showCart, (v) => { document.body.style.overflow = v ? 'hidden' : ''; });
+
+    return {
+      searchQuery, selectedCategory, sortBy, showCart, detail, selectedStorage, currentBanner,
+      sortOptions, banners, categories, cartItems, cartCount, cartSubtotal, shipping, cartTax, cartTotal,
+      filteredProducts, addToCart, removeItem, updateQty, checkout, openDetail, badgeClass, resetAll,
+      fmtPrice, formatNum
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
